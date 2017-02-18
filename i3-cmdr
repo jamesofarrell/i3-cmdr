@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+
+import i3ipc
+from time import sleep
+from sys import argv
+
+# Create the Connection object that can be used to send commands and subscribe
+# to events.
+i3 = i3ipc.Connection()
+
+tree = i3.get_tree()
+
+def get_active_workspace():
+    workspaces = i3.get_workspaces()
+    for w in workspaces:
+        if w.focused:
+            return get_workspace_by_name(w.name)
+
+def get_workspace_by_num(num):
+    for output in tree.nodes:
+        for workspace in output.nodes[1].nodes:
+            if workspace.num == num:
+                return workspace
+
+def get_workspace_by_name(name):
+    for output in tree.nodes:
+        #print(output.name)
+        if output.name != '__i3':
+            for workspace in output.nodes[1].nodes:
+                if workspace.name == name:
+                    return workspace
+
+def get_tiled_window_count(workspace):
+    return len(workspace.leaves())
+
+def get_floating_window_count(workspace):
+    return len(workspace.floating_nodes)
+
+def debug_command(cmd,slow):
+    cmds = cmd.split(';')
+    for c in cmds:
+        print(i3.command(c))
+        speed = (slow / 1000)
+        sleep(speed)
+
+def dwindle(workspace,mode,slow=0):
+    #code for shuffle
+    #current_workspace = get_active_workspace()
+    floating_count = get_floating_window_count(workspace)
+    tiled_count = get_tiled_window_count(workspace)
+    window_count = floating_count + tiled_count
+    #print('dwindle_back!')
+    cmd = 'workspace number {0};'.format(workspace.num)
+
+    cmd += 'focus tiling; floating toggle;' * (tiled_count)
+
+    flip = True
+    if mode == 'h':
+        flip = False
+    if window_count > 0:
+        cmd += 'floating toggle;'
+        if window_count > 1:
+            cmd += 'focus parent;'
+
+        for x in range(1,window_count):
+            move = 'left'
+            if not flip:
+                move = 'up'
+            cmd += 'focus floating; floating toggle; move {0}; move {0};'.format(move)
+            flip = not flip
+    
+
+    if (slow > 0):
+        print(cmd)
+        debug_command(cmd,slow)
+    else:
+        i3.command(cmd)
+
+def dwindle_back(workspace,mode,slow=0):
+    #code for shuffle
+    #current_workspace = get_active_workspace()
+    floating_count = get_floating_window_count(workspace)
+    tiled_count = get_tiled_window_count(workspace)
+    window_count = floating_count + tiled_count
+    #print('dwindle_back!')
+    cmd = 'workspace number {0};'.format(workspace.num)
+
+    if tiled_count > 0:
+        cmd += 'focus tiling;floating toggle;'
+
+    if tiled_count > 1:
+        cmd += 'focus tiling; floating toggle; focus left;' * (tiled_count - 1)
+
+    split1 = 'v'
+    split2 = 'h'
+    if mode == 'h':
+        split1 = 'h'
+        split2 = 'v'
+
+    if window_count > 1:
+        cmd += 'focus floating; floating toggle; split {0};'.format(split1)
+
+    num = int((window_count-1) / 2)
+    if num > 1:
+        cmd += 'focus floating; focus left; floating toggle; split {1}; focus floating; focus left; floating toggle; split {0};'.format(split1,split2) * (num)
+    cmd += 'focus floating; focus left; floating toggle;'
+    #print(cmd)
+    if (slow > 0):
+        debug_command(cmd,slow)
+    else:
+        i3.command(cmd)
+
+
+argv_len = len(argv)
+if len(argv) < 2:
+    print("i3-cmdr [dwindle h|v]")
+    exit()
+else:
+    if argv[1].lower() == 'dwindle':
+        mode = 'h'
+        slow = 0
+        print(argv_len)
+        if argv_len > 2 and argv[2].lower() == 'v':
+            mode = 'v'
+        if argv_len > 3:
+            slow = (int) (argv[3])
+            print("Slow:{0}".format(slow))
+        dwindle(get_active_workspace(),mode,slow=slow)
+
+
+
+#dwindle(get_active_workspace(),'v')
