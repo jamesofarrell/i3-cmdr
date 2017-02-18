@@ -51,14 +51,25 @@ def float_all(workspace):
     print("float: {0}".format(cmd))
     return(cmd)
 
-def dwindle(workspace,mode,slow=0):
+def dwindle(workspace,mode,weight='r',slow=0):
     #code for shuffle
-    floating_count = get_floating_window_count(workspace)
+    floating_count = get_floating_window_count(workspace) #this is stupid, fix it
     tiled_count = get_tiled_window_count(workspace)
     window_count = floating_count + tiled_count
 
+    #float all windows!
     cmd = float_all(workspace)
+    
+    #which direction?
+    movement_h = "right"
+    if weight == 'l':
+        movement_h = "left"
 
+    movement_v = "up"
+    if weight == 'd':
+        movement_v = 'down'
+
+    #which mode?
     flip = True
     if mode == 'v':
         flip = False
@@ -74,9 +85,10 @@ def dwindle(workspace,mode,slow=0):
         if window_count % 2 == 1:
             flip = not flip
         for x in range(1,window_count):
-            move = 'left'
+            #move = 'left'
+            move = movement_h
             if not flip:
-                    move = 'up'
+                    move = movement_v
             cmd += 'focus floating;'
             if x < (floating_count + 1):
                 cmd += 'focus right;'
@@ -99,14 +111,23 @@ except:
 
 if argv[1].lower() == 'dwindle':
     mode = 'h'
+    weight = 'r'
     if argv_len > 2 and argv[2].lower() == 'v':
         mode = 'v'
-    cmd += dwindle(active_workspace,mode,slow=slow)
+        weight = 'u'
+
+    if argv_len > 3:
+        if mode == 'h' and argv[3].lower() == 'l':
+            weight = 'l'
+        if mode == 'v' and argv[3].lower() == 'd':
+            weight = 'd'
+
+    cmd += dwindle(active_workspace,mode,weight=weight,slow=slow)
 elif argv[1].lower() == 'float':
     cmd += float_all(active_workspace)
 
 if cmd == "":
-    print("i3-cmdr [dwindle h|v]")
+    print("i3-cmdr [dwindle (h r|l) | (v u|d)]")
     print("i3-cmdr [float]")
     exit()
 
