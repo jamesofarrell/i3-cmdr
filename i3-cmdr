@@ -48,7 +48,6 @@ def float_all(workspace):
     tiled_count = get_tiled_window_count(workspace)
 
     cmd = 'focus tiling; floating toggle;' * (tiled_count)
-    print("float: {0}".format(cmd))
     return(cmd)
 
 def dwindle(workspace,mode,weight='r',slow=0):
@@ -119,10 +118,11 @@ if argv[1].lower() == 'dwindle':
     if argv_len > 3:
         if mode == 'h' and argv[3].lower() == 'l':
             weight = 'l'
-        if mode == 'v' and argv[3].lower() == 'd':
+        if argv[3].lower() == 'd':
             weight = 'd'
 
     cmd += dwindle(active_workspace,mode,weight=weight,slow=slow)
+
 elif argv[1].lower() == 'float':
     cmd += float_all(active_workspace)
 
@@ -131,7 +131,8 @@ if cmd == "":
     print("i3-cmdr [float]")
     exit()
 
-cmd = 'workspace number {0};'.format(active_workspace.num) + cmd
+cmd = 'workspace number {0};{1}'.format(active_workspace.num, cmd)
+
 if (slow > 0):
     print(cmd)
     debug_command(cmd,slow)
