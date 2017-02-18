@@ -71,18 +71,18 @@ def dwindle(workspace,mode,slow=0):
         if window_count > 1:
             cmd += 'focus parent;'
 
+        if window_count % 2 == 1:
+            flip = not flip
         for x in range(1,window_count):
             move = 'left'
             if not flip:
-                move = 'up'
+                    move = 'up'
             cmd += 'focus floating;'
             if x < (floating_count + 1):
                 cmd += 'focus right;'
             cmd += 'floating toggle; move {0}; move {0};'.format(move)
             flip = not flip
             
-
-    
     return(cmd)
 
 argv_len = len(argv)
