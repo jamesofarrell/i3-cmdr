@@ -31,7 +31,7 @@ def get_workspace_by_name(name):
                     return workspace
 
 def get_tiled_window_count(workspace):
-    return len(workspace.leaves())
+    return (len(workspace.leaves()) - get_floating_window_count(workspace))
 
 def get_floating_window_count(workspace):
     return len(workspace.floating_nodes)
@@ -43,22 +43,31 @@ def debug_command(cmd,slow):
         speed = (slow / 1000)
         sleep(speed)
 
+def float_all(workspace):
+    #code for shuffle
+    tiled_count = get_tiled_window_count(workspace)
+
+    cmd = 'focus tiling; floating toggle;' * (tiled_count)
+    print("float: {0}".format(cmd))
+    return(cmd)
+
 def dwindle(workspace,mode,slow=0):
     #code for shuffle
-    #current_workspace = get_active_workspace()
     floating_count = get_floating_window_count(workspace)
     tiled_count = get_tiled_window_count(workspace)
     window_count = floating_count + tiled_count
-    #print('dwindle_back!')
-    cmd = 'workspace number {0};'.format(workspace.num)
 
-    cmd += 'focus tiling; floating toggle;' * (tiled_count)
+    cmd = float_all(workspace)
 
     flip = True
-    if mode == 'h':
+    if mode == 'v':
         flip = False
     if window_count > 0:
+        if tiled_count == 0:
+            cmd += 'focus right;'
         cmd += 'floating toggle;'
+        if floating_count > 0:
+            cmd += 'focus right;' * floating_count
         if window_count > 1:
             cmd += 'focus parent;'
 
@@ -66,65 +75,46 @@ def dwindle(workspace,mode,slow=0):
             move = 'left'
             if not flip:
                 move = 'up'
-            cmd += 'focus floating; floating toggle; move {0}; move {0};'.format(move)
+            cmd += 'focus floating;'
+            if x < (floating_count + 1):
+                cmd += 'focus right;'
+            cmd += 'floating toggle; move {0}; move {0};'.format(move)
             flip = not flip
+            
+
     
-
-    if (slow > 0):
-        print(cmd)
-        debug_command(cmd,slow)
-    else:
-        i3.command(cmd)
-
-def dwindle_back(workspace,mode,slow=0):
-    #code for shuffle
-    #current_workspace = get_active_workspace()
-    floating_count = get_floating_window_count(workspace)
-    tiled_count = get_tiled_window_count(workspace)
-    window_count = floating_count + tiled_count
-    #print('dwindle_back!')
-    cmd = 'workspace number {0};'.format(workspace.num)
-
-    if tiled_count > 0:
-        cmd += 'focus tiling;floating toggle;'
-
-    if tiled_count > 1:
-        cmd += 'focus tiling; floating toggle; focus left;' * (tiled_count - 1)
-
-    split1 = 'v'
-    split2 = 'h'
-    if mode == 'h':
-        split1 = 'h'
-        split2 = 'v'
-
-    if window_count > 1:
-        cmd += 'focus floating; floating toggle; split {0};'.format(split1)
-
-    num = int((window_count-1) / 2)
-    if num > 1:
-        cmd += 'focus floating; focus left; floating toggle; split {1}; focus floating; focus left; floating toggle; split {0};'.format(split1,split2) * (num)
-    cmd += 'focus floating; focus left; floating toggle;'
-    #print(cmd)
-    if (slow > 0):
-        debug_command(cmd,slow)
-    else:
-        i3.command(cmd)
-
+    return(cmd)
 
 argv_len = len(argv)
-if len(argv) < 2:
+
+active_workspace = get_active_workspace();
+cmd = ""
+
+
+slow=0
+try:
+    slow = int(argv[-1])
+except:
+    slow = 0
+
+if argv[1].lower() == 'dwindle':
+    mode = 'h'
+    if argv_len > 2 and argv[2].lower() == 'v':
+        mode = 'v'
+    cmd += dwindle(active_workspace,mode,slow=slow)
+elif argv[1].lower() == 'float':
+    cmd += float_all(active_workspace)
+
+if cmd == "":
     print("i3-cmdr [dwindle h|v]")
+    print("i3-cmdr [float]")
     exit()
+
+cmd = 'workspace number {0};'.format(active_workspace.num) + cmd
+if (slow > 0):
+    print(cmd)
+    debug_command(cmd,slow)
 else:
-    if argv[1].lower() == 'dwindle':
-        mode = 'h'
-        slow = 0
-        if argv_len > 2 and argv[2].lower() == 'v':
-            mode = 'v'
-        if argv_len > 3:
-            slow = (int) (argv[3])
-        dwindle(get_active_workspace(),mode,slow=slow)
-
-
+    i3.command(cmd)
 
 #dwindle(get_active_workspace(),'v')
