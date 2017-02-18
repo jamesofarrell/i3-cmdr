@@ -119,12 +119,10 @@ else:
     if argv[1].lower() == 'dwindle':
         mode = 'h'
         slow = 0
-        print(argv_len)
         if argv_len > 2 and argv[2].lower() == 'v':
             mode = 'v'
         if argv_len > 3:
             slow = (int) (argv[3])
-            print("Slow:{0}".format(slow))
         dwindle(get_active_workspace(),mode,slow=slow)
 
 
